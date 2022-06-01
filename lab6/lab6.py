@@ -24,7 +24,7 @@ def load_data():
     Загрузка данных
     '''
     data = pd.read_csv('../lab5/mushrooms.csv')
-    data = data.dropna(axis=1, how='any')
+
     return data
 
 
@@ -34,6 +34,8 @@ def preprocess_data(data_in):
     '''
 
     data_out = data_in.copy()
+
+    data_out = data_out.dropna(axis=1, how='any')
 
     TARGET_IS_NUMERIC = data_out[TARGET_COL_NAME].dtype != 'O'
     number_cols = data_out.select_dtypes(exclude=['object'])
@@ -52,10 +54,12 @@ def preprocess_data(data_in):
     for col_name in number_fields_source:
         data_out[col_name] = scaler.fit_transform(data_out[[col_name]])
 
-    # Чтобы в тесте получилось низкое качество используем только 0,5% данных для обучения
-    target = data[TARGET_COL_NAME]
+    data_x = data_out.loc[:, data_out.columns != TARGET_COL_NAME]
+    data_y = data_out[TARGET_COL_NAME]
+
     X_train, X_test, y_train, y_test = train_test_split(
-        data_out, target, train_size=0.005, random_state=1)
+        data_x, data_y, test_size=0.3, random_state=1)
+
     return X_train, X_test, y_train, y_test
 
 
@@ -65,7 +69,6 @@ def draw_roc_curve(y_true, y_score, ax, pos_label=1, average='micro'):
                                      pos_label=pos_label)
     roc_auc_value = roc_auc_score(
         y_true, y_score, average=average, multi_class="ovo")
-    # plt.figure()
     lw = 2
     ax.plot(fpr, tpr, color='darkorange',
             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc_value)
